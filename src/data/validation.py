@@ -11,7 +11,7 @@ dataframe = pd.read_csv(csv_path)
 context = gx.get_context(mode="file")
 
 data_source_name= "house_data"
-data_source = context.data_sources.(name=data_source_name)
+data_source = context.data_sources.add_pandas(name=data_source_name)
 
 data_asset_name = "house_data_asset"
 data_asset= data_source.add_dataframe_asset(name=data_asset_name)
