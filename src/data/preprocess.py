@@ -1,6 +1,8 @@
 import pandas as pd
 import logging
-from sklearn.impute import SimpleImputer
+import re
+from sklearn.impute import SimpleImputer # type: ignore
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -9,16 +11,8 @@ logging.basicConfig(
 
 logger = logging.getLogger('data-preprcessor')
 
-FILEPATH="/home/fidisroxy/development/mlops/house-pred-mlops/data/raw/house_data.csv"
+FILEPATH="/home/fidisroxy/development/mlops/house-pred-mlops/data/raw/house_prices.csv"
 df = pd.read_csv(FILEPATH)
-
-numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
-
-imputer = SimpleImputer(strategy='median')
-
-df[numeric_cols] = imputer.fit_transform(df[numeric_cols])
-
-df.to_csv("data/processed/house_processed.csv", index=False)
 
 
 def load_data(filepath: str):
@@ -28,54 +22,133 @@ def load_data(filepath: str):
     return file
 
 
+def rename(df):
     
+    df_cleaned = df.copy()
+    df_cleaned = df_cleaned.rename(columns={'Price (in rupees)':'price',
+                                            'Amount(in rupees)': 'amount' })
+    return df_cleaned
+
+
+
+
+
+
+
 def re_capitalize(df):
     
     df_cleaned = df.copy()
-    
-    new_columns = []
-    for col in df_cleaned.columns:
-        
-        col = col.split('(')[0]
-        
-        col = col.strip().lower().replace(' ', '_')
-        
-        new_columns.append(col)
-        
-        df_cleaned.columns = new_columns
-    
+    df_cleaned.columns = df_cleaned.columns.str.lower().str.replace(' ', '_')
     return df_cleaned
     
-    
-     
-    
-def encode_labels(df):
-    
-    df_cleaned = df.copy()
-
-    df_cleaned = pd.get_dummies(df_cleaned, 
-                                columns=['furnishing'],
-                                prefix=['furn'])
-    
-    return df_cleaned
-
 
 def remove_strings(df):
     
     df_cleaned = df.copy()
-    
-    labels = ['bathroom', 'balcony', 'carpet_area', 'super_area', 'price', 'amount']
+    labels = ['bathroom', 'balcony', 'carpet_area', 'super_area', 'price']
+     
+
     
     for label in labels:
-        if label in df_cleaned.cloumns:
-            df_cleaned[label] = df_cleaned[label].str.replace(',','', regex= False)
-            df_cleaned[label] = df_cleaned[label].str.replace(r"\D+", "", regex=True)
+        if label in df_cleaned.columns:
+            # df_cleaned[label] = df_cleaned[label].str.replace(',','', regex= False)
+            df_cleaned[label] = df_cleaned[label].astype(str).str.replace(r"\D+", "", regex=True)
             df_cleaned[label] = pd.to_numeric(df_cleaned[label], errors='coerce')
             
     return df_cleaned
-
-def clean_data(df):
     
-    df= df.drop(['description','title', 'index', 'dimensions','plot_area'], axis=1)
 
-    pass
+def fill_labels(df):
+    
+    df_cleaned = df.copy()
+    
+    cat_cols = df.select_dtypes(include=['object']).columns
+    num_cols = df.select_dtypes(include=['int64', 'float64']).columns
+    
+    imputer_num = SimpleImputer(strategy='median')
+    imputer_cat = SimpleImputer(strategy='most_frequent')
+    
+    df_cleaned[num_cols] = imputer_num.fit_transform(num_cols)
+    df_cleaned[cat_cols] = imputer_cat.fit_transform(cat_cols)
+    
+    return df_cleaned
+    
+
+def extract_price(text):
+    text = text.lower()
+    match = re.search(r'(\d+(?:\.\d+)?)\s*(lac|lakh|cr)', text)  
+    if not match:
+        return None
+    
+    num = float(match.group(1))
+    unit = match.group(2)
+    
+    if unit in ['lac', 'lakh']:
+        return num * 100000
+    if unit == 'cr':
+        return num * 10000000
+    
+    
+def transform_amount(df):
+    
+    df_cleaned = df.copy()
+    df_cleaned['amount'] = df_cleaned['amount'].astype(str).str.replace('call for price', '', case=False, regex=True)
+    df_cleaned['amount'] = df_cleaned['amount'].astype(str).apply(extract_price)
+    
+    return df_cleaned
+
+    
+
+def transform_floors(df):
+    
+    df[['floor_num','total_floors']] = (df['floor'].str.extract(r'(\d+)\s*out\s*of\s*(\d+)',flags=re.IGNORECASE, expand=True))
+    df['floor_num'] = pd.to_numeric(df['floor_num'], errors='coerce')
+    df['total_floors']=pd.to_numeric(df['total_floors'], errors='coerce')
+    df['floor_ratio'] = df['floor_num'] / df['total_floors'] 
+    df['is_top_floor'] = (df['floor_num'] == df['total_floors']).astype(int)
+    df['is_bottom_floor'] = (df['floor_num'] == 0).astype(int)
+    df = df.drop(columns=['floor'])
+    
+    return df
+    
+def drop_labels(df):
+    
+    df_cleaned = df.copy()
+    
+    columns_to_drop = [
+        'title',
+        'description',
+        'index',
+        'dimension',
+        'plot_area'
+    ]
+        
+    
+    df_cleaned = df_cleaned.drop(columns= columns_to_drop,
+                                 errors ='ignore',
+                                 inplace=False)
+    return df_cleaned
+
+
+def preprocess_pipeline(filepath: str):
+    df = load_data(filepath)
+    df = rename(df)
+    df = re_capitalize(df)
+    df = remove_strings(df)
+    df = transform_amount(df)
+    df = transform_floors(df)
+    df = drop_labels(df)
+    print(df.head())
+    return df
+    
+    
+
+
+if __name__ == "__main__":
+    df = preprocess_pipeline(FILEPATH)
+    
+    df.head(5).to_json("head.json", indent=4, orient="records")
+
+
+
+
