@@ -2,6 +2,11 @@ import pandas as pd
 import logging
 import re
 from sklearn.impute import SimpleImputer # type: ignore
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+
+
 
 
 logging.basicConfig(
@@ -31,10 +36,6 @@ def rename(df):
 
 
 
-
-
-
-
 def re_capitalize(df):
     
     df_cleaned = df.copy()
@@ -58,20 +59,20 @@ def remove_strings(df):
     return df_cleaned
     
 
-def fill_labels(df):
+# def fill_labels(df):
     
-    df_cleaned = df.copy()
+#     df_cleaned = df.copy()
     
-    cat_cols = df.select_dtypes(include=['object']).columns
-    num_cols = df.select_dtypes(include=['int64', 'float64']).columns
+#     cat_cols = df.select_dtypes(include=['object']).columns
+#     num_cols = df.select_dtypes(include=['int64', 'float64']).columns
     
-    imputer_num = SimpleImputer(strategy='median')
-    imputer_cat = SimpleImputer(strategy='most_frequent')
+#     imputer_num = SimpleImputer(strategy='median')
+#     imputer_cat = SimpleImputer(strategy='most_frequent')
     
-    df_cleaned[num_cols] = imputer_num.fit_transform(num_cols)
-    df_cleaned[cat_cols] = imputer_cat.fit_transform(cat_cols)
+#     df_cleaned[num_cols] = imputer_num.fit_transform(num_cols)
+#     df_cleaned[cat_cols] = imputer_cat.fit_transform(cat_cols)
     
-    return df_cleaned
+#     return df_cleaned
     
 
 def extract_price(text):
@@ -130,6 +131,67 @@ def drop_labels(df):
     return df_cleaned
 
 
+def clean_label(df):
+    
+    df_cleaned = df.copy()
+    
+    df_cleaned['overlooking'] = (df_cleaned['overlooking']
+                                        .astype('string')
+                                        .str.lower()
+                                        .str.replace(r'[^a-z/ ]', '', regex=True)
+                                        .str.strip())
+                                        
+    df_cleaned['overlooking_list'] = (df_cleaned['overlooking']
+                                      .str.strip('/')
+                                       .str.split('/'))
+    
+    df_cleaned = df_cleaned.drop('overlooking', errors='ignore')
+    
+    return df_cleaned
+
+
+numeric_features = [
+    "amount","price", "carpet_area","balcony",
+    "bathroom", "floor_num", "total_floors",
+    "floor_ratio","is_top_floor", "is_bottom_floor"
+    
+]
+
+
+
+
+nominal_features =[
+    "location", "status","transaction",
+    "furnishing", "facing"," overlooking_list",
+    "car_parking", "ownership"
+]
+
+
+
+numeric_transformer = Pipeline(
+    steps=[
+        ("imputer", SimpleImputer(strategy="median")),
+        ("scaler", StandardScaler())
+    ]
+)
+
+
+
+nominal_transformer = Pipeline(
+    steps=[
+        ("imputer", SimpleImputer(strategy="most_frequent")),
+        ("encoder", OneHotEncoder(handle_unknown="ignore"))
+    ]
+)
+
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", numeric_transformer, numeric_features),
+        ("nom", nominal_transformer,nominal_features)
+    ]
+)
+
 def preprocess_pipeline(filepath: str):
     df = load_data(filepath)
     df = rename(df)
@@ -138,6 +200,8 @@ def preprocess_pipeline(filepath: str):
     df = transform_amount(df)
     df = transform_floors(df)
     df = drop_labels(df)
+    df = clean_label(df)
+    
     print(df.head())
     return df
     
@@ -148,6 +212,9 @@ if __name__ == "__main__":
     df = preprocess_pipeline(FILEPATH)
     
     df.head(5).to_json("head.json", indent=4, orient="records")
+
+
+
 
 
 
