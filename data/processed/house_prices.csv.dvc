@@ -1,0 +1,5 @@
+outs:
+- md5: ace87b382647cf7f3561ad8e7d6279d5
+  size: 22982586
+  hash: md5
+  path: house_prices.csv
