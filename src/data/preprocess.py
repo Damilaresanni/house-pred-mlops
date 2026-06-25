@@ -3,15 +3,17 @@ import logging
 import re
 from sklearn.impute import SimpleImputer # type: ignore
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, MultiLabelBinarizer
 from sklearn.pipeline import Pipeline
+from sklearn.base import BaseEstimator, TransformerMixin
+
 
 
 
 
 logging.basicConfig(
     level=logging.INFO,
-    format= '%(asctime)s - %(name)s - %(levelname)s - %(messages)s'
+    format= '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
 logger = logging.getLogger('data-preprcessor')
@@ -19,6 +21,10 @@ logger = logging.getLogger('data-preprcessor')
 FILEPATH="/home/fidisroxy/development/mlops/house-pred-mlops/data/raw/house_prices.csv"
 df = pd.read_csv(FILEPATH)
 
+overlooking_list  = [
+            "garden",
+            "park"
+        ]
 
 def load_data(filepath: str):
     
@@ -121,7 +127,10 @@ def drop_labels(df):
         'description',
         'index',
         'dimension',
-        'plot_area'
+        'plot_area',
+        'overlooking',
+        'society', 
+        'price'
     ]
         
     
@@ -149,21 +158,58 @@ def clean_label(df):
     
     return df_cleaned
 
+def split_car_parking(df):
+    df_cleaned = df.copy()
+
+    df_cleaned["parking_spaces"] = (
+        df_cleaned["car_parking"]
+        .str.extract(r"(\d+)", expand=False)
+        .astype(float)
+    )
+
+    df_cleaned["parking_type"] = (
+        df_cleaned["car_parking"]
+        .str.extract(r"([A-Za-z]+)", expand=False)
+    )
+
+    df_cleaned.drop(
+        columns=["car_parking"],
+        inplace=True,
+        errors="ignore"
+    )
+
+    return df_cleaned
+
+# class MultiLabelTransformer(BaseEstimator,TransformerMixin):
+    
+#     def __init__(self) -> None:
+#         self.mlb = MultiLabelBinarizer()
+        
+#     def fit(self, X, y=None):
+#         self.mlb.fit(X.squeeze())
+#         return self
+    
+#     def transform(self, X):
+#         return self.mlb.transform(X.squeeze())
+
+
 
 numeric_features = [
-    "amount","price", "carpet_area","balcony",
+    "amount", "carpet_area","balcony",
     "bathroom", "floor_num", "total_floors",
-    "floor_ratio","is_top_floor", "is_bottom_floor"
+    "floor_ratio","is_top_floor", "is_bottom_floor",
+    "parking_spaces"
     
 ]
 
 
 
 
-nominal_features =[
+
+
+categorical_features =[
     "location", "status","transaction",
-    "furnishing", "facing"," overlooking_list",
-    "car_parking", "ownership"
+    "furnishing", "facing", "ownership","parking_type"
 ]
 
 
@@ -177,10 +223,10 @@ numeric_transformer = Pipeline(
 
 
 
-nominal_transformer = Pipeline(
+categorical_transformer = Pipeline(
     steps=[
         ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("encoder", OneHotEncoder(handle_unknown="ignore"))
+        ("encoder", OneHotEncoder(handle_unknown="ignore")),
     ]
 )
 
@@ -188,7 +234,8 @@ nominal_transformer = Pipeline(
 preprocessor = ColumnTransformer(
     transformers=[
         ("num", numeric_transformer, numeric_features),
-        ("nom", nominal_transformer,nominal_features)
+        ("cat", categorical_transformer, categorical_features), 
+        # ("multi", MultiLabelBinarizer(classes=overlooking_list), multilabel_features)
     ]
 )
 
@@ -200,9 +247,10 @@ def preprocess_pipeline(filepath: str):
     df = transform_amount(df)
     df = transform_floors(df)
     df = drop_labels(df)
-    df = clean_label(df)
+    # df = clean_label(df)
+    df = split_car_parking(df)
     
-    print(df.head())
+    df.to_csv("/home/fidisroxy/development/mlops/house-pred-mlops/data/processed/house_prices.csv", index=False)
     return df
     
     
