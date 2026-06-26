@@ -9,7 +9,10 @@ stages:
   train:
     cmd: python -m src.models.train
     params:
-    - configs/model_config.yaml
+    - data.test_size
+    - model.max_depth
+    - model.n_estimators
+    - training.random_seed
     deps:
     - data/processed/house_prices.csv
     - src/models/train.py
