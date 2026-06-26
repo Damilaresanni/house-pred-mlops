@@ -1,0 +1,17 @@
+stages:
+  preprocess:
+    cmd: python -m src.data.preprocess
+    deps:
+    - data/raw/house_prices.csv
+    - src/data/preprocess.py
+    outs:
+    - data/processed/house_prices.csv
+  train:
+    cmd: python -m src.models.train
+    params:
+    - configs/model_config.yaml
+    deps:
+    - data/processed/house_prices.csv
+    - src/models/train.py
+    outs:
+    - models/model.pkl

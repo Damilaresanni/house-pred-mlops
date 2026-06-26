@@ -11,10 +11,11 @@ lib/
 include/
 
 
+data/raw/*.csv
+data/processed/*.csv
 
-data/external/*
-data/raw/house_prices.csv
-data/processed/*
+!data/raw/*.dvc
+!data/processed/*.dvc
 
 
 *.csv
