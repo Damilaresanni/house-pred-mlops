@@ -1,0 +1,31 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python -m src.data.preprocess
+    deps:
+    - path: data/raw/house_prices.csv
+      hash: md5
+      md5: fcfe623bd8f1157b2c5e062e5c703e69
+      size: 106149815
+    - path: src/data/preprocess.py
+      hash: md5
+      md5: be1523a1deb96c45b0b6a276e98bf1e2
+      size: 6787
+    outs:
+    - path: data/processed/house_prices.csv
+      hash: md5
+      md5: cd149c9cf81b2c6b6abc308b44fdaf0e
+      size: 20368448
+  train:
+    cmd: python -m src.models.train
+    params:
+      params.yaml:
+        data.test_size: 0.2
+        model.max_depth: 5
+        model.n_estimators: 100
+        training.random_seed: 42
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: e3966e3bb3722f822927e3cc2cf56bb5
+      size: 496371
