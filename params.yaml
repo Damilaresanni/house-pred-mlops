@@ -1,0 +1,15 @@
+model:
+  name: random_forest_regressor
+  n_estimators: 100
+  max_depth: 5
+
+
+data:
+  raw_path: "/home/fidisroxy/development/mlops/house-pred-mlops/data/raw/house_prices.csv"
+  processed_path: "/home/fidisroxy/development/mlops/house-pred-mlops/data/processed/house_prices.csv"
+  test_size: 0.2
+
+
+training:
+  random_seed: 42
+  experiment_name: first_model
