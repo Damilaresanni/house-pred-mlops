@@ -6,7 +6,8 @@ import logging
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import root_mean_squared_error, accuracy_score
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.metrics import r2_score, root_mean_squared_error, accuracy_score, mean_absolute_error
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 from src.data.preprocess import preprocessor
@@ -21,13 +22,26 @@ logger = logging.getLogger(__name__)
 
 CONFIG_PATH = "/home/fidisroxy/development/mlops/house-pred-mlops/configs/model_config.yaml"
 logger.info("Loading Model config")
+
+
+def evaluate(y_test,predictions):
+    rmse = root_mean_squared_error(y_test,predictions)
+    mae = mean_absolute_error(y_test,predictions)
+    r2 = r2_score(y_test,predictions)
+    
+    
+    return {
+        "rmse": rmse,
+        "mae" : mae,
+        "r2" : r2,
+    }
+
 def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/configs/model_config.yaml"):
     with open(config_path) as f:
         cfg = yaml.safe_load(f)
         
         params = {
-            **cfg["model"],
-            **cfg["training"]
+            **cfg["models"]
         }
         
         df = pd.read_csv(cfg["data"]["processed_path"])
@@ -40,21 +54,41 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
         
         mlflow.set_experiment("house-price-prediction")
         
+        
+    def get_model(model_name, params):
+             
+            if model_name == "linear_regression":
+                model = LinearRegression()
+                return model
+                
+            if model_name == "random_forest_regressor":
+                model = RandomForestRegressor(**params)
+                return model
+            
+            if model_name == "decision_tree_regressor":
+                model = DecisionTreeRegressor(**params)
+                return model
+            
+            else:
+                return(f"model Type Not Supported: {model_name}")
+        
+        
+    for model_name, params in cfg["models"].items():
+        model = get_model(model_name, params)
+        print(f"Model: {model_name}")
+        print(f"The Model: {model}")
+        print(f"Parameters: {params}")
+        print("-" * 30)
         logger.info("Creating model Pipeline")
-        with mlflow.start_run():
+        with mlflow.start_run(run_name="The Trinity"):
             mlflow.log_params({
-                 "model_name": cfg["model"]["name"],
-                "n_estimators": cfg["model"]["n_estimators"],
-                "max_depth": cfg["model"]["max_depth"],
-                "test_size": cfg["data"]["test_size"],
-                "random_seed": cfg["training"]["random_seed"]
+                 **params
             })
             
             # mlflow.log_artifact(config_path)
-            model = RandomForestRegressor(
-                n_estimators=cfg["model"]["n_estimators"],
-                max_depth=cfg["model"]["max_depth"]
-            )
+            
+            
+            
             model_pipeline = Pipeline(
                 steps=[
                  ("preprocessor", preprocessor),
@@ -70,23 +104,20 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
             predictions = model_pipeline.predict(X_test)
             
             
-            rmse = root_mean_squared_error(
-                y_test,
-                predictions
-               
-            )
+            results = evaluate(y_test, predictions)
             
             
-        
-            mlflow.log_metric("rmse", rmse)
+            mlflow.log_param("model", model_name)
+            mlflow.log_metrics(results)
             
+            logger.info("Saving model...")
             joblib.dump(model_pipeline, "/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
             
             mlflow.log_artifact("/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
             
-            logger.info("Saving model...")
-            print(f"RMSE: {rmse}")
-            return rmse
+            logger.info("Model Saved...")
+            print(f"RMSE: {results}")
+            return results
 
 
 if __name__ == "__main__":
