@@ -89,7 +89,7 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
             
             
             
-            model_pipeline = Pipeline(
+        model_pipeline = Pipeline(
                 steps=[
                  ("preprocessor", preprocessor),
                  ("model", model)]
@@ -97,27 +97,27 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
             
             
             
-            logger.info("Training Info")
-            print("X_train columns:", X_train.columns.tolist())
-            model_pipeline.fit(X_train, y_train)
+        logger.info("Training Info")
+        print("X_train columns:", X_train.columns.tolist())
+        model_pipeline.fit(X_train, y_train)
 
-            predictions = model_pipeline.predict(X_test)
+        predictions = model_pipeline.predict(X_test)
             
             
-            results = evaluate(y_test, predictions)
+        results = evaluate(y_test, predictions)
             
             
-            mlflow.log_param("model", model_name)
-            mlflow.log_metrics(results)
+        mlflow.log_param("model", model_name)
+        mlflow.log_metrics(results)
             
-            logger.info("Saving model...")
-            joblib.dump(model_pipeline, "/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
+        logger.info("Saving model...")
+        joblib.dump(model_pipeline, "/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
             
-            mlflow.log_artifact("/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
+        mlflow.log_artifact("/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
             
-            logger.info("Model Saved...")
-            print(f"RMSE: {results}")
-            return results
+        logger.info("Model Saved...")
+        print(f"RMSE: {results}")
+        return results
 
 
 if __name__ == "__main__":
