@@ -21,11 +21,12 @@ stages:
     params:
       params.yaml:
         data.test_size: 0.2
-        model.max_depth: 5
-        model.n_estimators: 100
+        models.decision_tree_regressor.max_depth: 15
+        models.random_forest_regressor.max_depth: 8
+        models.random_forest_regressor.n_estimators: 100
         training.random_seed: 42
     outs:
     - path: models/model.pkl
       hash: md5
-      md5: e3966e3bb3722f822927e3cc2cf56bb5
-      size: 496371
+      md5: 887ff1210e234db6bb4b87528316b227
+      size: 466716

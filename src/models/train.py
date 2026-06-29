@@ -24,6 +24,24 @@ CONFIG_PATH = "/home/fidisroxy/development/mlops/house-pred-mlops/configs/model_
 logger.info("Loading Model config")
 
 
+def get_model(model_name, params):
+             
+            if model_name == "linear_regression":
+                model = LinearRegression()
+                return model
+                
+            if model_name == "random_forest_regressor":
+                model = RandomForestRegressor(**params)
+                return model
+            
+            if model_name == "decision_tree_regressor":
+                model = DecisionTreeRegressor(**params)
+                return model
+            
+            else:
+                return(f"model Type Not Supported: {model_name}")
+            
+
 def evaluate(y_test,predictions):
     rmse = root_mean_squared_error(y_test,predictions)
     mae = mean_absolute_error(y_test,predictions)
@@ -40,9 +58,6 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
     with open(config_path) as f:
         cfg = yaml.safe_load(f)
         
-        params = {
-            **cfg["models"]
-        }
         
         df = pd.read_csv(cfg["data"]["processed_path"])
         df = df.dropna(subset=["amount"])
@@ -55,22 +70,7 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
         mlflow.set_experiment("house-price-prediction")
         
         
-    def get_model(model_name, params):
-             
-            if model_name == "linear_regression":
-                model = LinearRegression()
-                return model
-                
-            if model_name == "random_forest_regressor":
-                model = RandomForestRegressor(**params)
-                return model
-            
-            if model_name == "decision_tree_regressor":
-                model = DecisionTreeRegressor(**params)
-                return model
-            
-            else:
-                return(f"model Type Not Supported: {model_name}")
+    
         
         
     for model_name, params in cfg["models"].items():
@@ -85,7 +85,7 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
                  **params
             })
             
-            # mlflow.log_artifact(config_path)
+            
             
             
             
@@ -117,7 +117,7 @@ def train(config_path="/home/fidisroxy/development/mlops/house-pred-mlops/config
             
         logger.info("Model Saved...")
         print(f"RMSE: {results}")
-        return results
+    
 
 
 if __name__ == "__main__":

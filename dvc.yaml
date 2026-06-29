@@ -10,11 +10,9 @@ stages:
     cmd: python -m src.models.train
     params:
     - data.test_size
-    - model.max_depth
-    - model.n_estimators
+    - models.random_forest_regressor.max_depth
+    - models.random_forest_regressor.n_estimators
+    - models.decision_tree_regressor.max_depth
     - training.random_seed
-    deps:
-    - data/processed/house_prices.csv
-    - src/models/train.py
     outs:
     - models/model.pkl
