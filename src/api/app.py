@@ -30,17 +30,22 @@ app.add_middleware(
 )
 
 
-model = joblib.load("models/model.pkl")
+model = joblib.load("/home/fidisroxy/development/mlops/house-pred-mlops/models/model.pkl")
 
 class HouseData(BaseModel):
-    pass
+    
+    location: str
+    bathroom: int
+    carpet_area: int
+    status: str
+    balcony: int
 
 @app.get("/")
 def health_check():
     return{"status":"Healthy"}
 
 @app.post("/predict")
-def prredict(data:HouseData):
+def predict(data:HouseData):
     
     input_df = pd.DataFrame([data.model_dump()])
     
