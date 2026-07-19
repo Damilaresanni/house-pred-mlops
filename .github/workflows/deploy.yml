@@ -14,4 +14,4 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: /opt/house-price-api/deploy.sh
+          script: /opt/house-pred-api/house-pred-mlops/deploy.sh
