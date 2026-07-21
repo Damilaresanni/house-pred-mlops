@@ -16,7 +16,7 @@ jobs:
           tags: tag:ci-cd
       
       - name: Run deployment Script
-        run: /opt/house-pred-api/house-pred-mlops/deploy.sh
+        run: pwd
       
 
        
