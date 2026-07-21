@@ -8,10 +8,15 @@ jobs:
   deploy:             
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Connect To Tailscale Network
+        uses: tailscale/github-action@v4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: /opt/house-pred-api/house-pred-mlops/deploy.sh
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci-cd
+      
+      - name: Run deployment Script
+        run: /opt/house-pred-api/house-pred-mlops/deploy.sh
+      
+
+       
