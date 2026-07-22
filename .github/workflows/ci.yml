@@ -69,7 +69,7 @@ jobs:
       - run:
          
       - run: |
-          echo " This this job status is ${{ job.status }} "
+          echo " This job status is ${{ job.status }} "
           
 
 
