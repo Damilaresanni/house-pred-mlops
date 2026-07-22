@@ -2,8 +2,8 @@ set -e
 cd /opt/house-pred-api/house-pred-mlops/
 git fetch origin main
 git reset --hard origin/main
-python3 -m venv deploy
-source deploy/bin/activate
+python3 -m venv server
+source server/bin/activate
 pip install -r requirements.txt
 which python
 pip list
