@@ -10,4 +10,5 @@ pip list
 sudo systemctl restart house-pred-api.service
 sleep 2
 curl -f http://localhost:8000/health || (echo "Health check failed" && exit 1)
+echo "deploy script run successfully"
 
