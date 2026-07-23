@@ -5,7 +5,7 @@ git reset --hard origin/main
 python3 -m venv server
 source server/bin/activate
 pip install -r requirements.txt
-sudo systemctl restart house-pred-api.service
+sudo systemctl restart house-pred-api
 sleep 2
 curl -f http://localhost:8000/health || (echo "Health check failed" && exit 1)
 echo "successfull deployment"
