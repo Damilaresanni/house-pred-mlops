@@ -4,6 +4,7 @@
 
 .venv/
 venv/
+server/
 ENV/
 env/
 bin/
@@ -16,13 +17,6 @@ data/processed/*.csv
 
 !data/raw/*.dvc
 !data/processed/*.dvc
-
-
-*.csv
-*.xlsx
-*.parquet
-
-#  DVC later,only ignore the data, not the .dvc files
 
 
 
